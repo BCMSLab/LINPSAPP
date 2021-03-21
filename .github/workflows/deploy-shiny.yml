@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     container: rocker/verse:latest
     steps:
+      - name: Install git-lfs
+        run: apt-get update && apt-get install git-lfs
       - uses: actions/checkout@v2
         with:
           lfs: true
