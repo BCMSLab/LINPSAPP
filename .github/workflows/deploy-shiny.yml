@@ -1,0 +1,20 @@
+on: [push, pull_request]
+
+name: deploy-shiny
+
+jobs:
+  deploy-shiny:
+    runs-on: ubuntu-latest
+    container: rocker/verse:latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install shiny & friends
+        run: |
+          install.packages(c("shiny", "shinyBS", "DT", "rsconnect"))
+          install.packages(c("RSQLite", "DBI"))
+          install.packages(c("plotly", "igraph", "visNetwork", "Hmisc"))
+        shell: Rscript {0}
+      - name: Push to shinyapps.io
+        run: |
+          Rscript -e "rsconnect::setAccountInfo(name='mahshaaban', token=${{secrets.SHINYAPPS_TOKEN}}, secret=${{secrets.SHINYAPPS_SECRET}})"
+          Rscript -e "rsconnect::deployApp(appName = 'LINPSAPP')"
