@@ -15,7 +15,6 @@ library(visNetwork)
 # source('../www/utils.R')
 source('www/utils.R')
 
-# Sourcing ----
 # load lincs info
 # db_fl <- 'LINPS/results/LINPS.sqlite'
 db_fl <- "www/LINPS.sqlite"
@@ -348,13 +347,13 @@ ui <- navbarPage(title = 'LINPS',
                                 title = 'Select one cell line to overlay on the network.'
                             ),
                             checkboxInput(
-                                inputId = 'overlay_signif',
-                                label = 'Show significant nodes only',
+                                inputId = 'overlay_color',
+                                label = 'Change node colors',
                                 value = FALSE
                             ),
                             bsTooltip(
                                 id = 'overlay_signif',
-                                title = 'Check to show only significantly perturbed nodes in color.'
+                                title = 'Check to show perturbed nodes in different colors.'
                             ),
                             checkboxInput(
                                 inputId = 'overlay_scale',
@@ -420,8 +419,7 @@ ui <- navbarPage(title = 'LINPS',
                                 ),
                                 tags$br(),
                                 visNetworkOutput('graph'),
-                                tags$br(),
-                                dataTableOutput('test_tab')
+                                tags$br()
                             )
                         )
                     )
@@ -1214,7 +1212,7 @@ server <- function(input, output, session) {
         g
     })
     
-    graph <- reactiveValues(nodes = 0, edges = 0)
+    graph <- reactiveValues(nodes = NULL, edges = NULL)
     
     # extract node coefficients
     graph_nodes_coeff <- reactive({
@@ -1236,15 +1234,11 @@ server <- function(input, output, session) {
         df
     })
     
-    output$test_tab <- renderDataTable({
-        graph_nodes_coeff()
-    })
-    
+    # make graph nodes and edges
     observe({
         graph$nodes <- reactive({
             as_data_frame(model(), 'vertices') %>%
-                select(id = name) %>%
-                left_join(graph_nodes_coeff())
+                select(id = name)
         })
         graph$edges <- reactive({
                 e <- as_data_frame(model(), 'edges')
@@ -1252,17 +1246,25 @@ server <- function(input, output, session) {
         })
     })
     
-    # observeEvent(input$overlay_signif, {
-    #     graph$nodes <- reactive({
-    #         mutate(graph$nodes(), color = ifelse(coefficient.pvalue < .05, color , 'gray'))
-    #     })
-    # })
-    # observeEvent(input$overlay_scale, {
-    #     graph$nodes <- reactive({
-    #         mutate(graph$nodes(), size = 10 * as.numeric(abs(scale(coefficient + .001))))
-    #     })
-    # })
+    # update graph with node colors
+    observeEvent(input$overlay_color, {
+        graph$nodes <- reactive({
+            as_data_frame(isolate(model()), 'vertices') %>%
+                select(id = name) %>%
+                left_join(graph_nodes_coeff())
+        })
+    }, ignoreInit = TRUE)
     
+    # update graph with node scale
+    observeEvent(input$overlay_scale, {
+        graph$nodes <- reactive({
+            as_data_frame(isolate(model()), 'vertices') %>%
+                select(id = name) %>%
+                left_join(graph_nodes_coeff()) %>%
+                mutate(size = 10 * as.numeric(abs(scale(coefficient + .001))))
+        })
+    }, ignoreInit = TRUE)
+   
     output$graph <- renderVisNetwork({
         # TODO: find an elegant way to do this
         if (input$select_cluster) {cluster_by = 'clusters'}
