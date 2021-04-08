@@ -16,7 +16,6 @@ library(visNetwork)
 source('www/utils.R')
 
 # load lincs info
-# db_fl <- 'LINPS/results/LINPS.sqlite'
 db_fl <- "www/LINPS.sqlite"
 file.exists(db_fl)
 
@@ -283,7 +282,7 @@ ui <- navbarPage(title = 'LINPS',
                             tags$br(),
                             fluidRow(
                                 align = 'center',
-                                tags$p(strong('(Figure) Networks perturbation amplitudes.')),
+                                tags$p(strong('(Figure) Contributions of leading nodes to the perturbations.')),
                                 tags$br(),
                                 actionButton(
                                     inputId = 'nodes_back',
@@ -1367,8 +1366,7 @@ server <- function(input, output, session) {
                 geom_col() +
                 lims(y = c(0, 1)) +
                 labs(x = '') +
-                theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-                ggtitle(unique(df$cell_id))
+                theme(axis.text.x = element_text(angle = 90, hjust = 1))
         )
     })
     
@@ -1398,8 +1396,8 @@ server <- function(input, output, session) {
         HTML(paste(paste('The files below contain the data for selected items:'),
                    '<ul>',
                    paste('<li>Cell lines:', length(input$cell_id)), '</li>',
-                   paste('<li>Networks: ', length(input$network)),'</li>',
                    paste('<li>Perturbations: ', length(input$pert_iname)), '</li>',
+                   paste('<li>Networks: ', length(input$network)),'</li>',
                    '</ul>',
                    sep = ''))
     })
@@ -1451,8 +1449,8 @@ server <- function(input, output, session) {
         HTML(paste(paste('The files below contain the full data in the database:'),
                    '<ul>',
                    paste('<li>Cell lines:', length(network_stats$cell_lines)), '</li>',
-                   paste('<li>Perturbations: ', length(network_stats$networks)),  '</li>',
-                   paste('<li>Networks: ', length(network_stats$perturbations)), '</li>',
+                   paste('<li>Perturbations: ', length(network_stats$perturbations)),  '</li>',
+                   paste('<li>Networks: ', length(network_stats$networks)), '</li>',
                    '</ul>',
                    sep = ''))
     })
