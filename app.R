@@ -1225,8 +1225,7 @@ server <- function(input, output, session) {
             dplyr::select(id = node, coefficient) %>%
             collect() %>%
             unique() %>%
-            mutate(color = ifelse(coefficient > 0, 'red', 'green'),
-                   clusters = ifelse(coefficient > 0, 'Module 1', 'Module 2'))
+            mutate(color = ifelse(coefficient > 0, 'red', 'green'))
         
         dbDisconnect(con)
         
@@ -1263,7 +1262,29 @@ server <- function(input, output, session) {
                 mutate(size = 10 * as.numeric(abs(scale(coefficient + .001))))
         })
     }, ignoreInit = TRUE)
-   
+    
+    observeEvent(input$select_cluster, {
+        e <- as_data_frame(model(), 'edges')
+        e$weight <- 1
+        g <- graph_from_data_frame(e, directed = FALSE)
+        
+        # fc <- cluster_edge_betweenness(g)
+        fc <- cluster_fast_greedy(g)
+        # fc <- cluster_infomap(g)
+        # fc <- cluster_label_prop(g)
+        # fc <- cluster_leading_eigen(g)
+        # fc <- cluster_louvain(g)
+        # fc <- cluster_optimal(g)
+        # fc <- cluster_spinglass(g)
+        # fc <- cluster_walktrap(g)
+
+        graph$nodes <- reactive({
+            as_data_frame(isolate(model()), 'vertices') %>%
+                select(id = name) %>%
+                mutate(clusters = membership(fc))
+        })
+    }, ignoreInit = TRUE)
+    
     output$graph <- renderVisNetwork({
         # TODO: find an elegant way to do this
         if (input$select_cluster) {cluster_by = 'clusters'}
